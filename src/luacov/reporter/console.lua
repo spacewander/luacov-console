@@ -1,10 +1,8 @@
 local lfs = require('lfs')
-local console = {}
-
 local luacov = require("luacov.runner")
 local luacov_reporter = require("luacov.reporter")
-local ReporterBase = luacov_reporter.ReporterBase
 
+local ReporterBase = luacov_reporter.ReporterBase
 local ConsoleReporter = setmetatable({}, ReporterBase) do
 ConsoleReporter.__index = ConsoleReporter
 
@@ -80,7 +78,7 @@ function ConsoleReporter:new(config)
             not match_any(config.exclude, filename, false)
     end
 
-    local workdir = arg[1] or '.'
+    local workdir = ConsoleReporter.args.workdir
     local sep = package.config:sub(1,1)
     -- Remove path separator
     if workdir:sub(-1) == sep then
@@ -267,7 +265,9 @@ end
 
 end
 
-function console.report()
+local console = {}
+function console.report(args)
+    ConsoleReporter.args = args
     return luacov_reporter.report(ConsoleReporter)
 end
 
