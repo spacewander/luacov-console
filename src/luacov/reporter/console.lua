@@ -158,14 +158,14 @@ function ConsoleReporter:on_end_file(filename, hits, miss)
     self:record_offset_stop(filename)
 end
 
-local function coverage_to_string(hits, missed)
+local function calculate_coverage(hits, missed)
     local total = hits + missed
 
     if total == 0 then
         total = 1
     end
 
-    return ("%.2f%%"):format(hits/total*100.0)
+    return hits / total * 100.0
 end
 
 function ConsoleReporter:on_end()
@@ -179,29 +179,47 @@ function ConsoleReporter:on_end()
     local lines = {{"File", "Hits", "Missed", "Coverage"}}
     local total_hits, total_missed = 0, 0
 
+    local file_stats = {}
     for _, filename in ipairs(self:files()) do
         local summary = self._summary[filename]
 
         if summary then
             local hits, missed = summary.hits, summary.miss
 
-            table.insert(lines, {
+            file_stats[#file_stats + 1] = {
                 filename,
-                tostring(summary.hits),
-                tostring(summary.miss),
-                coverage_to_string(hits, missed)
-            })
+                summary.hits,
+                summary.miss,
+                calculate_coverage(hits, missed)
+            }
 
             total_hits = total_hits + hits
             total_missed = total_missed + missed
         end
     end
 
+    -- Order by coverage, miss, filename asc
+    table.sort(file_stats, function(a, b)
+        if a[4] ~= b[4] then
+            return a[4] < b[4]
+        elseif a[3] ~= b[3] then
+            return a[3] < b[3]
+        else
+            return a[1] < b[1]
+        end
+    end)
+    for _, file_stat in ipairs(file_stats) do
+        file_stat[2] = tostring(file_stat[2])
+        file_stat[3] = tostring(file_stat[3])
+        file_stat[4] = ("%.2f%%"):format(file_stat[4])
+        lines[#lines + 1] = file_stat
+    end
+
     table.insert(lines, {
         "Total",
         tostring(total_hits),
         tostring(total_missed),
-        coverage_to_string(total_hits, total_missed)
+        ('%.2f%%'):format(calculate_coverage(total_hits, total_missed))
     })
 
     local max_column_lengths = {}
