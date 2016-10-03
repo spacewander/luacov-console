@@ -109,7 +109,7 @@ function ConsoleReporter:on_start()
 
     self._filenames = {}
     self._files_start_offset = {}
-    self._files_size = {}
+    self._files_stop_offset = {}
 end
 
 function ConsoleReporter:record_offset_start(filename)
@@ -119,7 +119,7 @@ end
 
 function ConsoleReporter:record_offset_stop(filename)
     local offset = self._out:seek()
-    self._files_size[filename] = offset - self._files_start_offset[filename]
+    self._files_stop_offset[filename] = offset
 end
 
 function ConsoleReporter:on_new_file(filename)
@@ -252,13 +252,18 @@ function ConsoleReporter:on_end()
     end
 
     self:record_offset_stop('Summary')
-    io.stdout:write(self._cfg.reportfile .. '.index', "\n")
+    local idx_file = self._cfg.reportfile .. '.index'
+    local idx, err = io.open(idx_file, 'w')
+    if not idx then
+        io.stderr:write("Can't open ", idx_file, ": ", err)
+        os.exit(1)
+    end
     for i = 1, #self._filenames do
         local filename = self._filenames[i]
-        io.stdout:write(("%s:%d %d\n"):format(
-        filename,
-        self._files_start_offset[filename],
-        self._files_size[filename]
+        idx:write(("%s:%d %d\n"):format(
+            filename,
+            self._files_start_offset[filename],
+            self._files_stop_offset[filename]
         ))
     end
 end
