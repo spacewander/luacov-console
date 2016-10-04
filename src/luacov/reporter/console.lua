@@ -60,7 +60,10 @@ local function dirwalk(pattern, filter_fn)
 end
 
 function ConsoleReporter:new(config)
-    local reporter = ReporterBase.new(self, config)
+    local reporter, err = ReporterBase.new(self, config)
+    if not reporter then
+        return nil, err
+    end
 
     local filter = function(filename)
         if is_regular_file(filename) and
@@ -85,8 +88,7 @@ function ConsoleReporter:new(config)
         workdir = workdir:sub(1, -2)
     end
     if not is_dir(workdir) then
-        io.stderr:write(workdir .. " is not a directory\n")
-        os.exit(1)
+        return nil, workdir .. " is not a directory"
     end
     reporter._files = {}
     local files = dirwalk(workdir, filter)
@@ -98,7 +100,7 @@ function ConsoleReporter:new(config)
         end
     end
 
-    return reporter
+    return reporter, ""
 end
 
 function ConsoleReporter:on_start()
