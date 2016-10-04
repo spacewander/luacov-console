@@ -5,6 +5,25 @@ local configuration = luacov.load_config()
 local reporter = require("luacov.reporter.console")
 local argparse = require("argparse")
 
+-- Use ANSI escape sequences.
+-- https://en.wikipedia.org/wiki/ANSI_escape_code
+-- The Win32 console did not support ANSI escape sequences at all until Windows 10.
+-- FIXME If anyone knows how to color text in Win32 console before Win10,
+-- don't hesitate to send me a pull request!
+local function colored_print(color, text)
+    local end_color = "\27[0m"
+    local colors = {
+        black = "\27[30;1m",
+        red = "\27[31;1m",
+        green = "\27[32;1m",
+        yellow = "\27[33;1m",
+        white = "\27[37;1m",
+    }
+
+    local start_color = colors[color] or ""
+    print(start_color .. text .. end_color)
+end
+
 local function print_error(...)
     io.stderr:write(...)
     os.exit(1)
@@ -43,17 +62,23 @@ local function print_results(patterns, no_colored)
         print_error("Can't open ", data_file, ": ", err)
     end
 
+    local output = no_colored and print or function(line)
+        if line:sub(1, 1) == '0' then
+            colored_print('red', line:sub(3))
+        else
+            -- Treat not counted line as coveraged
+            colored_print('green', line:sub(3))
+        end
+    end
     for filename, block in pairs(index().filenames) do
         for _, pattern in ipairs(patterns) do
             if filename:match(pattern) then
                 file:seek("set", block.start)
-                if no_colored then
-                    --print(text)
-                else
-                    for line in file:lines() do
-                        if file:seek() <= block.stop then
-                            print(line)
-                        end
+                for line in file:lines() do
+                    if file:seek() <= block.stop then
+                        output(line)
+                    else
+                        break
                     end
                 end
 
@@ -75,13 +100,46 @@ local function print_summary(no_colored)
 
     local block = index().summary
     file:seek("set", block.start)
-    if no_colored then
-        --print(summary)
-    else
-        for line in file:lines() do
-            if file:seek() <= block.stop then
+
+    local output = no_colored and print or function(line)
+        local coverage_str = line:sub(-6, -2)
+        local coverage = coverage_str == '00.00' and 100 or tonumber(coverage_str)
+        local colors = {
+            'red',
+            'yellow',
+            'white',
+            'green',
+        }
+        local levels = {
+            30,
+            60,
+            80,
+            100,
+        }
+        for i, level in ipairs(levels) do
+            if coverage <= level then
+                colored_print(colors[i], line)
+                return
+            end
+        end
+        -- Should not reach here
+        -- So if we see black color output, it must be something wrong
+        colored_print('black', line)
+    end
+
+    local in_stats = false
+    for line in file:lines() do
+        if file:seek() <= block.stop then
+            if line:sub(1, 10) == ('-'):rep(10) then
+                in_stats = not in_stats
+                print(line)
+            elseif in_stats or line:sub(1, 5) == 'Total' then
+                output(line)
+            else
                 print(line)
             end
+        else
+            break
         end
     end
 
