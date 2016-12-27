@@ -1,8 +1,8 @@
 package = "luacov-console"
-version = "1.0-1"
+version = "1.0-2"
 source = {
     url = "git://github.com/spacewander/luacov-console",
-    tag = "1.0",
+    tag = "1.0.2",
 }
 description = {
     summary = "Combine luacov with your development cycle and CI",
