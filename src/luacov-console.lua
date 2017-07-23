@@ -4,6 +4,7 @@ local luacov = require("luacov.runner")
 local configuration = luacov.load_config()
 local reporter = require("luacov.reporter.console")
 local argparse = require("argparse")
+local lfs = require('lfs')
 
 -- Use ANSI escape sequences.
 -- https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -30,7 +31,21 @@ local function print_error(...)
 end
 
 local function index()
-    local idx_file = configuration.reportfile .. '.index'
+    local report_file = configuration.reportfile
+    local idx_file = report_file .. '.index'
+    local idx_file_ctime, err = lfs.attributes(idx_file, "change")
+    if not idx_file_ctime then
+        print_error("Can't stat ctime of ", idx_file, ": ", err)
+    end
+    local report_file_ctime, err = lfs.attributes(report_file, "change")
+    if not report_file_ctime then
+        print_error("Can't stat ctime of ", report_file_ctime, ": ", err)
+    end
+    if report_file_ctime > idx_file_ctime then
+        print_error(report_file, " was changed after ", idx_file, " created."..
+            " Please rerun luacov-console <dir> to recreate the index.")
+    end
+
     local idx = {
         filenames = {}
     }
