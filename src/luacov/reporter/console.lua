@@ -65,6 +65,15 @@ function ConsoleReporter:new(config)
         return nil, err
     end
 
+    local has_dot_prefix = false
+    for line in io.lines(config.statsfile) do
+        local match = string.match(line, "^%d+:%.[/\\]")
+        if match then
+            has_dot_prefix = true
+            break
+        end
+    end
+
     local filter = function(filename)
         if is_regular_file(filename) and
                 not string.match(filename, "%.lua$") then
@@ -75,6 +84,7 @@ function ConsoleReporter:new(config)
         -- Normalize file names before using patterns.
         filename = string.gsub(filename, "%.lua$", "")
         filename = string.gsub(filename, "\\", "/")
+
         -- If include list is empty, everything is included by default.
         -- If exclude list is empty, nothing is excluded by default.
         return match_any(config.include, filename, true) and
@@ -94,6 +104,12 @@ function ConsoleReporter:new(config)
     local files = dirwalk(workdir, filter)
     for _, file in ipairs(files) do
         file = luacov.real_name(file)
+
+        if not has_dot_prefix and file:sub(1, 2) == "./" then
+            -- luacov uses 'x.lua' instead of './x.lua'
+            file = file:sub(3)
+        end
+
         reporter._files[#reporter._files + 1] = file
         if not reporter._data[file] then
             reporter._data[file] = {max = 0, max_hits = 0}
