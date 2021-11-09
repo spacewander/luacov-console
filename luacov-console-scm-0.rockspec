@@ -1,7 +1,7 @@
 package = "luacov-console"
 version = "scm-0"
 source = {
-    url = "git://github.com/spacewander/luacov-console",
+    url = "git+https://github.com/spacewander/luacov-console",
     branch = "master",
 }
 description = {
