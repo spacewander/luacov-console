@@ -1,7 +1,7 @@
 package = "luacov-console"
 version = "1.1.0-1"
 source = {
-    url = "git://github.com/spacewander/luacov-console",
+    url = "git+https://github.com/spacewander/luacov-console",
     tag = "1.1",
 }
 description = {
