@@ -27,6 +27,14 @@ local function colored_print(color, text)
     print(start_color .. text .. end_color)
 end
 
+local function colored_print_if_pattern(color, text, patterns)
+    for _, pattern in ipairs(patterns) do
+        if text:match(pattern) then
+            colored_print(color, text)
+        end
+    end
+end
+
 local function print_error(...)
     io.stderr:write(...)
     os.exit(1)
@@ -108,7 +116,7 @@ local function print_results(patterns, no_colored)
     file:close()
 end
 
-local function print_summary(no_colored)
+local function print_summary(no_colored, patterns)
     local data_file = configuration.reportfile
     local file, err = io.open(data_file)
     if not file then
@@ -135,7 +143,7 @@ local function print_summary(no_colored)
         }
         for i, level in ipairs(levels) do
             if coverage <= level then
-                colored_print(colors[i], line)
+                colored_print_if_pattern(colors[i], line, patterns)
                 return
             end
         end
@@ -173,10 +181,10 @@ parser:option("-s --summary", "Show coverage summary."):args(0)
 
 local args = parser:parse()
 
-if args.list then
+if args.summary then
+    print_summary(args.no_colored, args.list or { ".*" })
+elseif args.list then
     print_results(args.list, args.no_colored)
-elseif args.summary then
-    print_summary(args.no_colored)
 elseif args.version then
     print(VERSION)
 else
