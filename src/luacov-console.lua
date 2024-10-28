@@ -28,6 +28,10 @@ local function colored_print(color, text)
 end
 
 local function colored_print_if_pattern(color, text, patterns)
+    if not patterns or #patterns == 0 then
+        colored_print(color, text)
+        return
+    end
     for _, pattern in ipairs(patterns) do
         if text:match(pattern) then
             colored_print(color, text)
@@ -52,7 +56,7 @@ local function index()
         print_error("Can't stat ctime of ", report_file_ctime, ": ", err)
     end
     if report_file_ctime > idx_file_ctime then
-        print_error(report_file, " was changed after ", idx_file, " created."..
+        print_error(report_file, " was changed after ", idx_file, " created." ..
             " Please rerun luacov-console <dir> to recreate the index.")
     end
 
@@ -172,7 +176,7 @@ local function print_summary(no_colored, patterns)
 end
 
 local parser = argparse("luacov-console",
-                        "Combine luacov with your development cycle and CI")
+    "Combine luacov with your development cycle and CI")
 parser:argument("workdir", "Specific the source directory", '.')
 parser:option("--version", "Print version"):args(0)
 parser:option("--no-colored", "Don't print with color."):args(0)
@@ -182,7 +186,7 @@ parser:option("-s --summary", "Show coverage summary."):args(0)
 local args = parser:parse()
 
 if args.summary then
-    print_summary(args.no_colored, args.list or { ".*" })
+    print_summary(args.no_colored, args.list)
 elseif args.list then
     print_results(args.list, args.no_colored)
 elseif args.version then
