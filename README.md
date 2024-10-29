@@ -11,6 +11,7 @@ Luacov-console is a luacov reporter makes it easier for your development cycle a
     Unlike luacov, luacov-console also counts lua files under `workdir` which weren't touched by tests.
 3. Run `luacov-console -s` to see the summary of coverage results.
 4. Run `luacov-console -l [lua pattern1] [lua pattern2]` to see the report of matched files.
+5. Run `luacov-console -s -l [lua pattern1] [lua pattern2]` to see the summary only for matched files.
 
 ## Installation
 
