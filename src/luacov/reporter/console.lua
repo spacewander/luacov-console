@@ -91,7 +91,11 @@ function ConsoleReporter:new(config)
             not match_any(config.exclude, filename, false)
     end
 
-    local workdir = ConsoleReporter.args.workdir
+    local workdir = "."
+    if ConsoleReporter.args ~= nil and ConsoleReporter.args.worker ~= nil then
+        workdir = ConsoleReporter.args.worker
+    end
+
     local sep = package.config:sub(1,1)
     -- Remove path separator
     if workdir:sub(-1) == sep then
