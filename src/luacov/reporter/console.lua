@@ -75,8 +75,13 @@ function ConsoleReporter:new(config)
     end
 
     local filter = function(filename)
-        if is_regular_file(filename) and
-                not string.match(filename, "%.lua$") then
+        -- As the same as the default luacov reporter, the include/exclude rules
+        -- only apply on regular files. Otherwise, the directories will be skipped.
+        if not is_regular_file(filename) then
+            return true
+        end
+
+        if not string.match(filename, "%.lua$") then
             return false
         end
 
