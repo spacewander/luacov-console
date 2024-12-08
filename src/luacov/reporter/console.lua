@@ -75,8 +75,13 @@ function ConsoleReporter:new(config)
     end
 
     local filter = function(filename)
-        if is_regular_file(filename) and
-                not string.match(filename, "%.lua$") then
+        -- As the same as the default luacov reporter, the include/exclude rules
+        -- only apply on regular files. Otherwise, the directories will be skipped.
+        if not is_regular_file(filename) then
+            return true
+        end
+
+        if not string.match(filename, "%.lua$") then
             return false
         end
 
@@ -91,7 +96,11 @@ function ConsoleReporter:new(config)
             not match_any(config.exclude, filename, false)
     end
 
-    local workdir = ConsoleReporter.args.workdir
+    local workdir = "."
+    if ConsoleReporter.args ~= nil and ConsoleReporter.args.worker ~= nil then
+        workdir = ConsoleReporter.args.worker
+    end
+
     local sep = package.config:sub(1,1)
     -- Remove path separator
     if workdir:sub(-1) == sep then
