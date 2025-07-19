@@ -49,14 +49,15 @@ local function index()
     local idx_file = report_file .. '.index'
     local idx_file_ctime, err = lfs.attributes(idx_file, "change")
     if not idx_file_ctime then
-        print_error("Can't stat ctime of ", idx_file, ": ", err)
+        return print_error("Can't stat ctime of ", idx_file, ": ", err)
     end
-    local report_file_ctime, err = lfs.attributes(report_file, "change")
+    local report_file_ctime
+    report_file_ctime, err = lfs.attributes(report_file, "change")
     if not report_file_ctime then
-        print_error("Can't stat ctime of ", report_file_ctime, ": ", err)
+        return print_error("Can't stat ctime of ", report_file_ctime, ": ", err)
     end
     if report_file_ctime > idx_file_ctime then
-        print_error(report_file, " was changed after ", idx_file, " created." ..
+        return print_error(report_file, " was changed after ", idx_file, " created." ..
             " Please rerun luacov-console <dir> to recreate the index.")
     end
 
@@ -88,7 +89,7 @@ local function print_results(patterns, no_colored)
     local data_file = configuration.reportfile
     local file, err = io.open(data_file)
     if not file then
-        print_error("Can't open ", data_file, ": ", err)
+        return print_error("Can't open ", data_file, ": ", err)
     end
 
     local output = no_colored and print or function(line)
@@ -124,7 +125,7 @@ local function print_summary(no_colored, patterns)
     local data_file = configuration.reportfile
     local file, err = io.open(data_file)
     if not file then
-        print_error("Can't open ", data_file, ": ", err)
+        return print_error("Can't open ", data_file, ": ", err)
     end
 
     local block = index().summary
