@@ -2,6 +2,7 @@ local lfs = require('lfs')
 local luacov = require("luacov.runner")
 local luacov_reporter = require("luacov.reporter")
 
+local dir_sep = package.config:sub(1, 1)
 local ReporterBase = luacov_reporter.ReporterBase
 local ConsoleReporter = setmetatable({}, ReporterBase) do
 ConsoleReporter.__index = ConsoleReporter
@@ -59,6 +60,32 @@ local function dirwalk(pattern, filter_fn)
     return files
 end
 
+local function is_absolute(path)
+   if path:sub(1, 1) == dir_sep or path:sub(1, 1) == "/" then
+      return true
+   end
+
+   if dir_sep == "\\" and path:find("^%a:") then
+      return true
+   end
+
+   return false
+end
+
+local function get_cur_dir()
+   local pwd_cmd = dir_sep == "\\" and "cd 2>nul" or "pwd 2>/dev/null"
+   local handler = assert(io.popen(pwd_cmd, "r"))
+   local cur_dir = handler:read()
+   handler:close()
+   cur_dir = cur_dir:gsub("\r?\n$", "")
+
+   if cur_dir:sub(-1) ~= dir_sep and cur_dir:sub(-1) ~= "/" then
+      cur_dir = cur_dir .. dir_sep
+   end
+
+   return cur_dir
+end
+
 function ConsoleReporter:new(config)
     local reporter, err = ReporterBase.new(self, config)
     if not reporter then
@@ -111,12 +138,20 @@ function ConsoleReporter:new(config)
     end
     reporter._files = {}
     local files = dirwalk(workdir, filter)
+    local cur_dir
     for _, file in ipairs(files) do
         file = luacov.real_name(file)
 
         if not has_dot_prefix and file:sub(1, 2) == "./" then
             -- luacov uses 'x.lua' instead of './x.lua'
             file = file:sub(3)
+        end
+
+        if not is_absolute(file) then
+            if not cur_dir then
+                cur_dir = get_cur_dir()
+            end
+            file = cur_dir .. file
         end
 
         reporter._files[#reporter._files + 1] = file
