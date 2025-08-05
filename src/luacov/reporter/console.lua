@@ -328,6 +328,7 @@ function ConsoleReporter:on_end()
             self._files_stop_offset[filename]
         ))
     end
+    idx:close()
 end
 
 end

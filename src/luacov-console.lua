@@ -92,12 +92,21 @@ local function print_results(patterns, no_colored)
         return print_error("Can't open ", data_file, ": ", err)
     end
 
+    local zero = string.byte('0')
+    local equal = string.byte('=')
+    local in_filename_part = false
     local output = no_colored and print or function(line)
-        if line:sub(1, 1) == '0' then
+        if line:byte(1) == zero then
             colored_print('red', line:sub(3))
+        elseif line:byte(1) == equal then
+            in_filename_part = not in_filename_part
+            colored_print('green', line)
         else
+            if not in_filename_part then
+              line = line:sub(3)
+            end
             -- Treat not counted line as coveraged
-            colored_print('green', line:sub(3))
+            colored_print('green', line)
         end
     end
     for filename, block in pairs(index().filenames) do
@@ -176,6 +185,12 @@ local function print_summary(no_colored, patterns)
     file:close()
 end
 
+local function has_report_files(conf)
+    local report_file = conf.reportfile
+    local idx_file = report_file .. '.index'
+    return lfs.attributes(report_file, "size") and lfs.attributes(idx_file, "size")
+end
+
 local parser = argparse("luacov-console",
     "Combine luacov with your development cycle and CI")
 parser:argument("workdir", "Specific the source directory", '.')
@@ -187,8 +202,14 @@ parser:option("-s --summary", "Show coverage summary."):args(0)
 local args = parser:parse()
 
 if args.summary then
+    if not has_report_files(configuration) then
+        reporter.report(args)
+    end
     print_summary(args.no_colored, args.list)
 elseif args.list then
+    if not has_report_files(configuration) then
+        reporter.report(args)
+    end
     print_results(args.list, args.no_colored)
 elseif args.version then
     print(VERSION)
